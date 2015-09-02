@@ -599,5 +599,8 @@ module Travelport
           </SOAP:Body>
       </SOAP:Envelope>
     template
+    TEST_PNR_RESPONSE_DATA = <<-template
+      Hola
+    template
   end
 end

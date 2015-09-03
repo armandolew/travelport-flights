@@ -49,11 +49,12 @@ module Travelport
       ### ADDED TO CALL AIRCREATERESERVATIONRQ ###	
       def pnr_generation(contactInfo, air_pricing_solution)
 	if @fake
-	   response = Travelport::Flights::ProviderReservationData.create_from_xml(TEST_PNR_RESPONSE_DATA)
+	   response_pnr = Travelport::Flights::ProviderReservationData.create_from_xml(TEST_PNR_RESPONSE_DATA)
+	   response = [0,0]
 	else
 	   request_body = render_provider_reservation_template(contactInfo, air_pricing_solution)	
-	   response = call_service(request_body)
-	   Travelport::Flights::ProviderReservationData.create_from_xml(response.body)
+	   response_pnr = call_service(request_body)
+	   response = Travelport::Flights::ProviderReservationData.create_from_xml(response_pnr.body)
         end
         return response
       end

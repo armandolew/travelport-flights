@@ -5,7 +5,8 @@ module Travelport
       @@finder = Proc.new {|key| next nil }
 
       attr_accessor :flight_infos, :total_price, :taxes, :key, :approximate_base_price,
-        :approximate_total_price, :base_price, :equivalent_base_price, :currency_type, :unique_id, :original_xml
+        :approximate_total_price, :base_price, :equivalent_base_price, :currency_type, :latest_ticketing_time, :fare_info_key, 
+	:unique_id, :original_xml
 
       def initialize
         self.currency_type = "MXN"
@@ -34,6 +35,9 @@ module Travelport
         air_pricing_solution.base_price = node['BasePrice'].delete(air_pricing_solution.currency_type)
         air_pricing_solution.total_price = node['TotalPrice'].delete(air_pricing_solution.currency_type)
         air_pricing_solution.taxes = node['Taxes'].delete(air_pricing_solution.currency_type)
+	air_pricing_solution.latest_ticketing_time = node['LatestTicketingTime']
+	air_pricing_solution.fare_info_key = node['FareInfoRef']
+
         unless node['EquivalentBasePrice'].nil?
           air_pricing_solution.equivalent_base_price = node['EquivalentBasePrice'].delete(air_pricing_solution.currency_type)
         end

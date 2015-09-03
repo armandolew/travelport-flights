@@ -21,7 +21,12 @@ module Travelport
 
 			puts "Airline Code: " + result_airline.xpath("@LocatorCode").to_s
 
-			return "YT2EX3"
+			codes = []
+
+			codes << results.xpath("@LocatorCode").to_s
+			codes << result_airline.xpath("@LocatorCode").to_s
+
+			return codes
  		end
 	end
   end	

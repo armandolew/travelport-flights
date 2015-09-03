@@ -50,22 +50,14 @@ module Travelport
       def pnr_generation(contactInfo, air_pricing_solution)
 	if @fake
 	   response_pnr = Travelport::Flights::ProviderReservationData.create_from_xml(TEST_PNR_RESPONSE_DATA)
-<<<<<<< HEAD
 	   response = ["0","0"]
-=======
-	   response = [0,0]
->>>>>>> 93c2de5696b171cd45e378f70978b8d0cf846f96
 	else
 	   request_body = render_provider_reservation_template(contactInfo, air_pricing_solution)	
 	   response_pnr = call_service(request_body)
 	   response = Travelport::Flights::ProviderReservationData.create_from_xml(response_pnr.body)
-<<<<<<< HEAD
-	
 	   if response.nil?
 	     response = ["0","0"]	
 	   end	
-=======
->>>>>>> 93c2de5696b171cd45e378f70978b8d0cf846f96
         end
         return response
       end

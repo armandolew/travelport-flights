@@ -126,5 +126,15 @@ module Travelport
 	</soapenv:Envelope>
     template
 
+    PNR_CANCEL_TEMPLATE =<<-template
+	<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:com="http://www.travelport.com/schema/common_v31_0" xmlns:univ="http://www.travelport.com/schema/universal_v31_0">
+	<soapenv:Header/>
+	<soapenv:Body>
+		<univ:UniversalRecordCancelReq AuthorizedBy="user" TargetBranch="<%= target_branch %>" TraceId="trace" UniversalRecordLocatorCode="<%= universal_record %>" Version="0">
+	<com:BillingPointOfSaleInfo OriginApplication="UAPI"/>
+		</univ:UniversalRecordCancelReq>
+	</soapenv:Body>
+	</soapenv:Envelope>
+    template
   end
 end

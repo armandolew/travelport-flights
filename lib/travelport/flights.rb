@@ -14,10 +14,8 @@ module Travelport
 
       attr_accessor :url, :branch_code, :username, :password, :fake
 
-      SOAP_PATH = "AirService"
-
       def initialize(options = {})
-        @url = options[:url] + SOAP_PATH
+        @url = options[:url] + options[:soap_path]
         @branch_code = options[:branch_code]
         @username = options[:username]
         @password = options[:password]
@@ -47,22 +45,40 @@ module Travelport
       end
 
       ### ADDED TO CALL AIRCREATERESERVATIONRQ ###	
-      def pnr_generation(contactInfo, air_pricing_solution)
+      #def pnr_generation(contactInfo, air_pricing_solution)
+	#if @fake
+	#   response_pnr = Travelport::Flights::ProviderReservationData.create_from_xml(TEST_PNR_RESPONSE_DATA)
+	#   response = ["0","0"]
+	#else
+	#   request_body = render_provider_reservation_template(contactInfo, air_pricing_solution)	
+	#   response_pnr = call_service(request_body)
+	#   response = Travelport::Flights::ProviderReservationData.create_from_xml(response_pnr.body)
+	#   if response.nil?
+	#     response = ["0","0"]	
+	#   end	
+        #end
+        #return response
+      #end
+
+      def pnr_generation(air_create_reservation)
 	if @fake
-	   response_pnr = Travelport::Flights::ProviderReservationData.create_from_xml(TEST_PNR_RESPONSE_DATA)
-	   response = ["0","0"]
+		response = Travelport::Flights::ProviderReservationData.create_from_xml(TEST_PNR_RESPONSE_DATA)
 	else
-	   request_body = render_provider_reservation_template(contactInfo, air_pricing_solution)	
-	   response_pnr = call_service(request_body)
-	   response = Travelport::Flights::ProviderReservationData.create_from_xml(response_pnr.body)
-	
-	   if response.nil?
-	     response = ["0","0"]	
-	   end	
-        end
+		request_body = render_provider_reservation_template(air_create_reservation)
+		response_pnr = call_service(request_body)
+		response = Travelport::Flights::ProviderReservationData.create_from_xml(response_pnr.body)
+	end
         return response
-      end
+      end	
+
       ### ADDED TO CALL AIRCREATERESERVATIONRQ ###
+
+
+      def cancel_reservation(universal_record_id)
+	request_body = render_cancelation_template(universal_record_id)
+        response = call_service(request_body)
+	return response
+      end
 
       def render_round_trip_template(origin, destination, travel_date, return_date)
         travel_date = travel_date.strftime("%Y-%m-%d")
@@ -80,30 +96,30 @@ module Travelport
       end
 
       ### ADDED TO CALL AIRCREATERESERVATIONRQ ###
-      def render_provider_reservation_template(contactInfo, air_pricing_solution)
+      def render_provider_reservation_template(air_create_reservation)
 	date = DateTime.now.strftime("%FT%T%:z")
-	flight_key_var = air_pricing_solution.flight_infos[0].key
-	approximate_base_price_var = air_pricing_solution.approximate_base_price
-	approximate_total_price = air_pricing_solution.approximate_total_price
-	base_price_var = air_pricing_solution.base_price
-	total_price_var = air_pricing_solution.total_price
-	taxes_var = air_pricing_solution.taxes
-	flight_arrival_time_var = air_pricing_solution.flight_infos[0].arrival_time
-	carrier_var = air_pricing_solution.flight_infos[0].carrier
-	change_of_plane_var = air_pricing_solution.flight_infos[0].change_of_plane
-	departure_var = air_pricing_solution.flight_infos[0].departure_time
-	destination_var = air_pricing_solution.flight_infos[0].destination
-	flight_number_var = air_pricing_solution.flight_infos[0].flight_number	
-	group_var = air_pricing_solution.flight_infos[0].group
-	origin_var = air_pricing_solution.flight_infos[0].origin
-	participation_level_var = air_pricing_solution.flight_infos[0].participant_level
+	flight_key_var = air_create_reservation.air_segment.key
+	approximate_base_price_var = air_create_reservation.air_price_solution.approximate_base_price
+	approximate_total_price = air_create_reservation.air_price_solution.approximate_total_price
+	base_price_var = air_create_reservation.air_price_solution.base_price
+	total_price_var = air_create_reservation.air_price_solution.total_price
+	taxes_var = air_create_reservation.air_price_solution.taxes
+	flight_arrival_time_var = air_create_reservation.air_segment.arrival_time
+	carrier_var = air_create_reservation.air_segment.carrier
+	change_of_plane_var = air_create_reservation.air_segment.change_of_plane
+	departure_var = air_create_reservation.air_segment.departure_time
+	destination_var = air_create_reservation.air_segment.destination
+	flight_number_var = air_create_reservation.air_segment.flight_number	
+	group_var = air_create_reservation.air_segment.group
+	origin_var = air_create_reservation.air_segment.origin
+	participation_level_var = air_create_reservation.air_segment.participant_level
 
 	namespace = OpenStruct.new(
-		contactInfo_email: contactInfo.email,
-		contactInfo_birthday: contactInfo.birthday,
-		contactInfo_first_name: contactInfo.first_name,
-		contactInfo_last_name: contactInfo.last_name,
-		contactInfo_phone_number: contactInfo.phone_number,
+		contactInfo_email: air_create_reservation.contactInfo.email,
+		contactInfo_birthday: air_create_reservation.contactInfo.birthday,
+		contactInfo_first_name: air_create_reservation.contactInfo.first_name,
+		contactInfo_last_name: air_create_reservation.contactInfo.last_name,
+		contactInfo_phone_number: air_create_reservation.contactInfo.phone_number,
 		flight_key: flight_key_var,
 		approximate_base_price: approximate_base_price_var,
 		approximate_total_price: approximate_total_price,
@@ -124,14 +140,18 @@ module Travelport
 		ticket_date: departure_var
 	)
 	template = ERB.new(Travelport::Flights::PNR_REQ_TEMPLATE)
-
-
-	puts "PNR_REQUEST: " + template.result(namespace.instance_eval {binding} ).inspect
-
-
 	return  template.result(namespace.instance_eval {binding} )
       end	
-      ### ADDED TO CALL AIRCREATERESERVATIONRQ ###		
+      ### ADDED TO CALL AIRCREATERESERVATIONRQ ###	
+
+      def render_cancelation_template(universal_reservation_id)
+	namespace = OpenStruct.new(
+			universal_record: universal_reservation_id,
+			target_branch: "P7025995"
+		    )
+        template = ERB.new(Travelport::Flights::PNR_CANCEL_TEMPLATE)
+        return template.result(namespace.instance_eval {binding})
+      end	
 
       def call_service(body)
         auth = { username: @username, password: @password }

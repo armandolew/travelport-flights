@@ -13,20 +13,24 @@ module Travelport
 
 		def self.create_from_xml(xml)
 			doc = Nokogiri::XML(xml)
-			results = doc.xpath('//universal:AirCreateReservationRsp/universal:UniversalRecord', 'universal' => 'http://www.travelport.com/schema/universal_v31_0')
-			
-			puts "PNR: " + results.xpath("@LocatorCode").to_s
-			
-			result_airline = doc.xpath('//universal:AirCreateReservationRsp/universal:UniversalRecord/universal:ProviderReservationInfo', 'universal' => 'http://www.travelport.com/schema/universal_v31_0')
+			universal_record = doc.xpath('//universal:AirCreateReservationRsp/universal:UniversalRecord', 'universal' => 'http://www.travelport.com/schema/universal_v31_0')
+			pnr_record = doc.xpath('//universal:AirCreateReservationRsp/universal:UniversalRecord/universal:ProviderReservationInfo', 'universal' => 'http://www.travelport.com/schema/universal_v31_0')
+			air_reservation_record = doc.xpath('//universal:AirCreateReservationRsp/universal:UniversalRecord/air:AirReservation', 'universal' => 'http://www.travelport.com/schema/universal_v31_0', 'air' => 'http://www.travelport.com/schema/universal_v31_0')
+			 
+			universal_code	= universal_record.xpath("@LocatorCode").to_s #Si no, "0"
+			pnr_code 	= pnr_record.xpath("@LocatorCode").to_s #Si no, "0"
+			airline_code 	= air_reservation_record.xpath("@LocatorCode").to_s #Si no, "0"
 
-			puts "Airline Code: " + result_airline.xpath("@LocatorCode").to_s
+			if universal_code.nil? or universal_code.eql? "" and 
+			  empty_results = doc.xpath('//SOAP:Fault/faultstring/text()')	
+			  message = empty_results.to_s 
+			else
+			  message = "OK"
+			end
 
-			codes = []
+			@provider_reservation_response = ProviderReservationResponse.new(pnr_code, universal_code, airline_code, message)
 
-			codes << results.xpath("@LocatorCode").to_s
-			codes << result_airline.xpath("@LocatorCode").to_s
-
-			return codes
+			return @provider_reservation_response
  		end
 	end
   end	
